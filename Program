@@ -1,0 +1,161 @@
+use anchor_lang::prelude::*;
+
+declare_id!("ArTToKen1zed1111111111111111111111111111111");
+
+#[program]
+pub mod art_tokenized {
+    use super::*;
+
+    /// Creates a new Artwork record on-chain.
+    /// The creator is the signer and initial owner.
+    pub fn create_artwork(
+        ctx: Context<CreateArtwork>,
+        uri: String,
+        content_hash: [u8; 32],
+        title: String,
+    ) -> Result<()> {
+        require!(uri.len() <= 200, ArtError::UriTooLong);
+        require!(title.len() <= 64, ArtError::TitleTooLong);
+
+        let artwork = &mut ctx.accounts.artwork;
+        artwork.bump = ctx.bumps.artwork;
+        artwork.creator = ctx.accounts.creator.key();
+        artwork.owner = ctx.accounts.creator.key();
+        artwork.uri = uri;
+        artwork.content_hash = content_hash;
+        artwork.title = title;
+        artwork.created_at = Clock::get()?.unix_timestamp;
+
+        emit!(ArtworkCreated {
+            artwork: artwork.key(),
+            creator: artwork.creator,
+            owner: artwork.owner,
+        });
+
+        Ok(())
+    }
+
+    /// Transfers ownership to a new owner (collector).
+    pub fn transfer_ownership(ctx: Context<TransferOwnership>) -> Result<()> {
+        let artwork = &mut ctx.accounts.artwork;
+        require_keys_eq!(artwork.owner, ctx.accounts.current_owner.key(), ArtError::NotOwner);
+
+        artwork.owner = ctx.accounts.new_owner.key();
+
+        emit!(OwnershipTransferred {
+            artwork: artwork.key(),
+            from: ctx.accounts.current_owner.key(),
+            to: ctx.accounts.new_owner.key(),
+        });
+
+        Ok(())
+    }
+
+    /// Updates the URI (only creator).
+    pub fn update_uri(ctx: Context<UpdateUri>, new_uri: String) -> Result<()> {
+        require!(new_uri.len() <= 200, ArtError::UriTooLong);
+        let artwork = &mut ctx.accounts.artwork;
+        require_keys_eq!(artwork.creator, ctx.accounts.creator.key(), ArtError::NotCreator);
+
+        artwork.uri = new_uri;
+
+        emit!(ArtworkUpdated {
+            artwork: artwork.key(),
+            creator: ctx.accounts.creator.key(),
+        });
+
+        Ok(())
+    }
+}
+
+#[derive(Accounts)]
+#[instruction(uri: String, content_hash: [u8; 32], title: String)]
+pub struct CreateArtwork<'info> {
+    #[account(mut)]
+    pub creator: Signer<'info>,
+
+    /// PDA: ["artwork", creator, content_hash]
+    #[account(
+        init,
+        payer = creator,
+        space = Artwork::space(&uri, &title),
+        seeds = [b"artwork", creator.key().as_ref(), content_hash.as_ref()],
+        bump
+    )]
+    pub artwork: Account<'info, Artwork>,
+
+    pub system_program: Program<'info, System>,
+}
+
+#[derive(Accounts)]
+pub struct TransferOwnership<'info> {
+    #[account(mut)]
+    pub current_owner: Signer<'info>,
+
+    /// Artwork account (PDA already exists)
+    #[account(mut)]
+    pub artwork: Account<'info, Artwork>,
+
+    /// New owner (can be any pubkey)
+    pub new_owner: UncheckedAccount<'info>,
+}
+
+#[derive(Accounts)]
+pub struct UpdateUri<'info> {
+    pub creator: Signer<'info>,
+    #[account(mut)]
+    pub artwork: Account<'info, Artwork>,
+}
+
+#[account]
+pub struct Artwork {
+    pub bump: u8,
+    pub creator: Pubkey,
+    pub owner: Pubkey,
+    pub content_hash: [u8; 32],
+    pub created_at: i64,
+    pub title: String, // max 64
+    pub uri: String,   // max 200
+}
+
+impl Artwork {
+    pub fn space(uri: &String, title: &String) -> usize {
+        // Anchor discriminator (8) + fields
+        8 + 1 + 32 + 32 + 32 + 8
+        // Strings are: 4 bytes length prefix + content
+        + 4 + title.len()
+        + 4 + uri.len()
+    }
+}
+
+#[event]
+pub struct ArtworkCreated {
+    pub artwork: Pubkey,
+    pub creator: Pubkey,
+    pub owner: Pubkey,
+}
+
+#[event]
+pub struct OwnershipTransferred {
+    pub artwork: Pubkey,
+    pub from: Pubkey,
+    pub to: Pubkey,
+}
+
+#[event]
+pub struct ArtworkUpdated {
+    pub artwork: Pubkey,
+    pub creator: Pubkey,
+}
+
+#[error_code]
+pub enum ArtError {
+    #[msg("Only the current owner can transfer ownership.")]
+    NotOwner,
+    #[msg("Only the creator can update this artwork.")]
+    NotCreator,
+    #[msg("URI too long.")]
+    UriTooLong,
+    #[msg("Title too long.")]
+    TitleTooLong,
+}
