@@ -1,0 +1,33 @@
+the-tokenized-art-project/
+  README.md
+  .gitignore
+  .env.example
+  package.json
+  tsconfig.json
+
+  assets/
+    logo.png
+
+  programs/
+    art_tokenized/
+      Cargo.toml
+      Xargo.toml
+      src/
+        lib.rs
+
+  app/
+    README.md
+
+  client/
+    src/
+      index.ts
+      pda.ts
+      types.ts
+
+  tests/
+    art_tokenized.ts
+
+  migrations/
+    deploy.ts
+
+  Anchor.toml
