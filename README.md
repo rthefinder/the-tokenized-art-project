@@ -12,4 +12,4 @@ The Tokenized Art Project ($ART) introduces a new way for artists to tokenize th
 
 By leveraging blockchain technology, $ART aims to create a transparent, verifiable, and artist-first ecosystem where digital and physical artworks can be owned, traded, and preserved without intermediaries.
 
-CA:9r9rFmDnLfcLRZaZctAYboPnx1nuntp87S7Y64jKpump
+CA:
