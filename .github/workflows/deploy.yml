@@ -1,0 +1,65 @@
+name: Deploy Contracts
+
+on:
+  workflow_dispatch:
+    inputs:
+      network:
+        description: 'Network to deploy to'
+        required: true
+        type: choice
+        options:
+          - sepolia
+          - mainnet
+
+jobs:
+  deploy:
+    name: Deploy to ${{ inputs.network }}
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.network }}
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+      
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8
+      
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      
+      - name: Compile contracts
+        working-directory: contracts
+        run: pnpm compile
+      
+      - name: Deploy contracts
+        working-directory: contracts
+        run: pnpm deploy:${{ inputs.network }}
+        env:
+          PRIVATE_KEY: ${{ secrets.DEPLOYER_PRIVATE_KEY }}
+          SEPOLIA_RPC_URL: ${{ secrets.SEPOLIA_RPC_URL }}
+          MAINNET_RPC_URL: ${{ secrets.MAINNET_RPC_URL }}
+      
+      - name: Verify contracts
+        working-directory: contracts
+        run: node ../scripts/verify-contracts.js --network ${{ inputs.network }}
+        env:
+          ETHERSCAN_API_KEY: ${{ secrets.ETHERSCAN_API_KEY }}
+        continue-on-error: true
+      
+      - name: Create deployment artifact
+        run: |
+          mkdir -p deployments
+          cp contracts/deployments.json deployments/
+          echo "Deployed to ${{ inputs.network }} at $(date)" > deployments/info.txt
+      
+      - name: Upload deployment artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: deployment-${{ inputs.network }}
+          path: deployments/
