@@ -1,7 +1,7 @@
 # 🎨 The Tokenized Art Project ($ART)
 
-[![CI](https://github.com/rthefinder/the-tokenized-art-project/workflows/CI/badge.svg)](https://github.com/rthefinder/the-tokenized-art-project/actions)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+<img width="809" height="1024" alt="Capture d’écran 2026-01-02 à 19 23 43" src="https://github.com/user-attachments/assets/d0cc1a1d-908b-4f69-bf4e-dc0fde1e9525" />
+
 
 > **A transparent, artist-first platform for tokenizing artwork and establishing verifiable ownership on the blockchain.**
 
