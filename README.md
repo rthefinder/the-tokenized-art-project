@@ -1,5 +1,7 @@
 # 🎨 The Tokenized Art Project ($ART)
 
+3a7kcqzQyyRxjP9y8W23taoRksCdJ5z2iHJrJbHubonk
+
 <img width="809" height="1024" alt="Capture d’écran 2026-01-02 à 19 23 43" src="https://github.com/user-attachments/assets/d0cc1a1d-908b-4f69-bf4e-dc0fde1e9525" />
 
 
